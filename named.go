@@ -244,11 +244,20 @@ func bindArray(bindType int, query string, arg interface{}, m *reflectx.Mapper) 
 	}
 	var arglist []interface{}
 	for i := 0; i < arrayLen; i++ {
-		elemArglist, err := bindArgs(names, arrayValue.Index(i).Interface(), m)
-		if err != nil {
-			return "", []interface{}{}, err
+		switch arrayValue.Index(i).Interface().(type) {
+		case map[string]interface{}:
+			elemArglist, err := bindMapArgs(names, arrayValue.Index(i).Interface().(map[string]interface{}))
+			if err != nil {
+				return "", []interface{}{}, err
+			}
+			arglist = append(arglist, elemArglist...)
+		default:
+			elemArglist, err := bindArgs(names, arrayValue.Index(i).Interface(), m)
+			if err != nil {
+				return "", []interface{}{}, err
+			}
+			arglist = append(arglist, elemArglist...)
 		}
-		arglist = append(arglist, elemArglist...)
 	}
 	if arrayLen > 1 {
 		bound = fixBound(bound, arrayLen)

@@ -260,5 +260,30 @@ func TestNamedQueries(t *testing.T) {
 			t.Errorf("expected %s, got %s", sl.Email, p2.Email)
 		}
 
+		// Test batch inserts with map
+		msls := []map[string]interface{}{
+			map[string]interface{}{
+				"first_name": "James", "last_name": "Nicholas", "email": "jnicholas@ab.co.nz",
+			},
+			map[string]interface{}{
+				"first_name": "Alex", "last_name": "Kelly", "email": "akelly@zb.co.nz",
+			},
+			map[string]interface{}{
+				"first_name": "Bob", "last_name": "Potter", "email": "bpotter@zb.co.nz",
+			},
+		}
+
+		_, err = db.NamedExec(`INSERT INTO person (first_name, last_name, email)
+			VALUES (:first_name, :last_name, :email)`, msls)
+			test.Error(err)
+
+		for _, p := range msls {
+			dest := Person{}
+			err = db.Get(&dest, db.Rebind("SELECT * FROM person WHERE email=?"), p["email"])
+			test.Error(err)
+			if dest.Email != p["email"] {
+				t.Errorf("expected %s, got %s", p["email"], dest.Email)
+			}
+		}
 	})
 }
